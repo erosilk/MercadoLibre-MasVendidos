@@ -11,7 +11,7 @@ chrome.runtime.sendMessage('getState', state => {
 function sortItems() {
   // Check if active view mode is List or Gallery mode
   const listSelector = '#searchResults'
-  const rowItems = [...document.querySelectorAll('.results-item')]
+  const rowItems = [...document.querySelectorAll(listSelector + " > li")]
   const IDs = rowItems.map(item => item.innerHTML.match(/(MLA)[0-9]+/i)[0])
   const itemsSold = []
 
