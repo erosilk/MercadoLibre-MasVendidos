@@ -9,11 +9,11 @@ gulp.task('js', () => {
   gulp
     .src(src)
     .pipe(
-      babel({
-        presets: ['es2015']
-      })
+    babel({
+      presets: ['es2015']
+    })
     )
-    .pipe(uglify())
+    .pipe(uglify().on('error', e => console.log(e)))
     .pipe(gulp.dest(dest))
 })
 
