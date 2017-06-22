@@ -9,33 +9,25 @@ chrome.runtime.sendMessage('getState', state => {
 })
 
 function sortItems() {
-  // Declare ids and class selectors
+  // Check if active view mode is List or Gallery mode
   const listSelector = '#searchResults'
-  const itemSelector = '.results-item'
-  const soldQuantitySelector = '.item__condition'
+  const rowItems = [...document.querySelectorAll(listSelector + " > li")]
+  const IDs = rowItems.map(item => item.innerHTML.match(/(MLA)[0-9]+/i)[0])
+  const itemsSold = []
 
-  // Check if active view mode is Stack (list) or Gallery (grid) mode
-  const viewMode = document.querySelector('.ico')
-  const viewModeActive = viewMode.className.includes('view-option-stack selected')
-    ? 'view-option-stack'
-    : 'view-option-grid'
-
-  // Add a li element "0 vendidos" to those products that didn't sell nothing yet
-  const rowItems = [...document.querySelectorAll(soldQuantitySelector)]
-  rowItems.forEach(row => {
-    const text = row.innerText
-    if (!text.includes('vendido')) {
-      row.innerText = `0 vendidos - ${text}`
-    }
+  // Get all sold quantities and push them to an array.
+  IDs.forEach(id => {
+    getSold(id, (id, quantity) => {
+      itemsSold.push(id)
+      itemsSold.push(quantity)
+      sort()
+    })
   })
 
-  // Sort all the quantity of sold products descendly
-  const rowItemsUpdated = [...document.querySelectorAll(itemSelector)]
-  const rowItemsSorted = rowItemsUpdated.sort((a, b) => {
-    const valueA = a.querySelector(soldQuantitySelector).innerText.replace(/\D/g, '')
-    const valueB = b.querySelector(soldQuantitySelector).innerText.replace(/\D/g, '')
-    return valueA - valueB
-  })
+  // Async function that fetches Mercadolibre's API for sold quantities info.
+  function getSold(id, cb) {
+    fetch('https://api.mercadolibre.com/items/' + id).then(x => x.json().then(j => cb(j.id, j.sold_quantity)))
+  }
 
   function sort() {
     if (IDs.length === itemsSold.length / 2) {

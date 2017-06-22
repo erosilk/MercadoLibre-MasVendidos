@@ -1,28 +1,24 @@
+let enabled
+
 /* global chrome */
 /* eslint no-undef: "error" */
 /* eslint func-names: ["error", "always"] */
-
-let enabled
-
-function onBrowserStart() {
+;(function onBrowserStart() {
   chrome.storage.sync.get({ enabled: true }, items => {
     enabled = items.enabled
   })
   checkIcon()
-}
-
-onBrowserStart()
+})()
 
 chrome.extension.onMessage.addListener((request, sender, sendResponse) => {
   if (request === 'getState') {
     sendResponse(enabled)
     checkIcon(enabled)
-    return
+  } else {
+    enabled = request === 'Activar'
+    chrome.storage.sync.set({ enabled })
+    checkIcon(enabled)
   }
-
-  enabled = request === 'Activar'
-  chrome.storage.sync.set({ enabled })
-  checkIcon(enabled)
 })
 
 function checkIcon(state) {
