@@ -1,6 +1,5 @@
 /* global chrome document */
 /* eslint no-undef: "error" */
-/* global fetch:false */
 
 chrome.runtime.sendMessage('getState', state => {
   if (state) {
@@ -9,41 +8,38 @@ chrome.runtime.sendMessage('getState', state => {
 })
 
 function sortItems() {
-  // Check if active view mode is List or Gallery mode
+  // Declare ids and class selectors
   const listSelector = '#searchResults'
-  const rowItems = [...document.querySelectorAll(listSelector + " > li")]
-  const IDs = rowItems.map(item => item.innerHTML.match(/(MLA)[0-9]+/i)[0])
-  const itemsSold = []
+  const itemSelector = '.results-item'
+  const soldQuantitySelector = '.item__condition'
 
-  // Get all sold quantities and push them to an array.
-  IDs.forEach(id => {
-    getSold(id, (id, quantity) => {
-      itemsSold.push(id)
-      itemsSold.push(quantity)
-      sort()
-    })
+  // Check if active view mode is Stack (list) or Gallery (grid) mode
+  const viewMode = document.querySelector('.ico')
+  const viewModeActive = viewMode.className.includes('view-option-stack selected')
+    ? 'view-option-stack'
+    : 'view-option-grid'
+
+  // Add a li element "0 vendidos" to those products that didn't sell nothing yet
+  const rowItems = [...document.querySelectorAll(soldQuantitySelector)]
+  rowItems.forEach(row => {
+    const text = row.innerText
+    if (!text.includes('vendido')) {
+      row.innerText = `0 vendidos - ${text}`
+    }
   })
 
-  // Async function that fetches Mercadolibre's API for sold quantities info.
-  function getSold(id, cb) {
-    fetch('https://api.mercadolibre.com/items/' + id).then(x => x.json().then(j => cb(j.id, j.sold_quantity)))
-  }
+  // Sort all the quantity of sold products descendly
+  const rowItemsUpdated = [...document.querySelectorAll(itemSelector)]
+  const rowItemsSorted = rowItemsUpdated.sort((a, b) => {
+    const valueA = a.querySelector(soldQuantitySelector).innerText.replace(/\D/g, '')
+    const valueB = b.querySelector(soldQuantitySelector).innerText.replace(/\D/g, '')
+    return valueA - valueB
+  })
 
-  function sort() {
-    if (IDs.length === itemsSold.length / 2) {
-      // Sort all the quantity of sold products descendly
-      const rowItemsSorted = rowItems.slice().sort((a, b) => {
-        const valueA = itemsSold[itemsSold.indexOf(a.firstElementChild.id) + 1]
-        const valueB = itemsSold[itemsSold.indexOf(b.firstElementChild.id) + 1]
-        return valueA - valueB
-      })
+  // Clean all items inside the list
+  const listView = document.querySelector(listSelector)
+  listView.innerHTML = null
 
-      // Clean all items inside the list
-      const listView = document.querySelector(listSelector)
-      listView.innerHTML = null
-
-      // Insert all the items sorted descendly
-      rowItemsSorted.forEach(row => listView.insertAdjacentElement('afterbegin', row))
-    }
-  }
+  // Insert all the items sorted descendly
+  rowItemsSorted.forEach(row => listView.insertAdjacentElement('afterbegin', row))
 }
